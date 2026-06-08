@@ -1,5 +1,16 @@
 export type GenerationMode = 'full-random' | 'unified' | 'two-type' | 'rare-weird';
-export type LayoutMode = 'neat-grid' | 'offset-grid' | 'wide-grid' | 'dense-grid' | 'diagonal-drift';
+export type LayoutRarity = 'normal' | 'rare' | 'superRare' | 'mythic';
+export type LayoutMode =
+  | 'neat-grid'
+  | 'offset-grid'
+  | 'wide-grid'
+  | 'dense-grid'
+  | 'diagonal-drift'
+  | 'wave-grid'
+  | 'courtyard-grid'
+  | 'spiral-vortex'
+  | 'radial-bloom'
+  | 'nested-orbit';
 export type SpeedMode = 'sleepy' | 'steady' | 'breezy' | 'mixed';
 export type UmbrellaRarity = 'normal' | 'rare' | 'superRare' | 'mythic' | 'weird';
 export type RareUmbrellaStyle = 'jewels' | 'lace' | 'moon' | 'pinwheel' | 'confetti' | 'constellation';
@@ -80,5 +91,6 @@ export interface WorldState {
   };
   seedLabel: string;
   layoutMode: LayoutMode;
+  layoutRarity: LayoutRarity;
   speedMode: SpeedMode;
 }

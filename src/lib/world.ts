@@ -1,6 +1,7 @@
 import type {
   GenerationMode,
   LayoutMode,
+  LayoutRarity,
   SpeedMode,
   UmbrellaDesign,
   UmbrellaInstance,
@@ -9,6 +10,8 @@ import type {
 } from '../types';
 import { color, generateSeedLabel, pick, randomBetween, randomInt, weightedMode } from './random';
 import { createUmbrellaDesign } from './umbrella';
+
+const TAU = Math.PI * 2;
 
 const createBackground = () => {
   const hue = randomInt(168, 238);
@@ -22,6 +25,7 @@ const createBackground = () => {
 
 interface LayoutPlan {
   mode: LayoutMode;
+  rarity: LayoutRarity;
   speedMode: SpeedMode;
   cols: number;
   rows: number;
@@ -33,7 +37,19 @@ interface LayoutPlan {
   speedScale: number;
 }
 
-const weightedLayoutMode = (): LayoutMode => {
+const weightedLayoutRarity = (): LayoutRarity => {
+  const value = Math.random();
+  if (value < 0.018) return 'mythic';
+  if (value < 0.07) return 'superRare';
+  if (value < 0.21) return 'rare';
+  return 'normal';
+};
+
+const weightedLayoutMode = (rarity: LayoutRarity): LayoutMode => {
+  if (rarity === 'mythic') return 'nested-orbit';
+  if (rarity === 'superRare') return pick(['spiral-vortex', 'radial-bloom'] as const);
+  if (rarity === 'rare') return pick(['wave-grid', 'courtyard-grid'] as const);
+
   const value = Math.random();
   if (value < 0.3) return 'neat-grid';
   if (value < 0.53) return 'offset-grid';
@@ -51,7 +67,8 @@ const weightedSpeedMode = (): SpeedMode => {
 };
 
 const createLayoutPlan = (width: number, height: number): LayoutPlan => {
-  const mode = weightedLayoutMode();
+  const rarity = weightedLayoutRarity();
+  const mode = weightedLayoutMode(rarity);
   const speedMode = weightedSpeedMode();
   const minSide = Math.max(420, Math.min(width, height));
   const density = {
@@ -60,10 +77,15 @@ const createLayoutPlan = (width: number, height: number): LayoutPlan => {
     'wide-grid': randomBetween(0.152, 0.19),
     'dense-grid': randomBetween(0.086, 0.108),
     'diagonal-drift': randomBetween(0.116, 0.146),
+    'wave-grid': randomBetween(0.104, 0.13),
+    'courtyard-grid': randomBetween(0.09, 0.118),
+    'spiral-vortex': randomBetween(0.09, 0.12),
+    'radial-bloom': randomBetween(0.095, 0.125),
+    'nested-orbit': randomBetween(0.088, 0.115),
   }[mode];
   const cols = Math.max(mode === 'dense-grid' ? 10 : 6, Math.ceil(width / (minSide * density)));
   const spacingX = width / cols;
-  const spacingY = spacingX * (mode === 'wide-grid' ? randomBetween(1.06, 1.2) : randomBetween(0.9, 1.06));
+  const spacingY = spacingX * (mode === 'wide-grid' ? randomBetween(1.06, 1.2) : randomBetween(0.88, 1.06));
   const rows = Math.ceil(height / spacingY) + 2;
   const radiusScale = {
     'neat-grid': randomBetween(0.35, 0.42),
@@ -71,6 +93,11 @@ const createLayoutPlan = (width: number, height: number): LayoutPlan => {
     'wide-grid': randomBetween(0.4, 0.5),
     'dense-grid': randomBetween(0.27, 0.34),
     'diagonal-drift': randomBetween(0.31, 0.41),
+    'wave-grid': randomBetween(0.31, 0.4),
+    'courtyard-grid': randomBetween(0.29, 0.38),
+    'spiral-vortex': randomBetween(0.28, 0.36),
+    'radial-bloom': randomBetween(0.3, 0.39),
+    'nested-orbit': randomBetween(0.27, 0.35),
   }[mode];
   const speedScale = {
     sleepy: randomBetween(0.45, 0.72),
@@ -81,6 +108,7 @@ const createLayoutPlan = (width: number, height: number): LayoutPlan => {
 
   return {
     mode,
+    rarity,
     speedMode,
     cols,
     rows,
@@ -91,6 +119,59 @@ const createLayoutPlan = (width: number, height: number): LayoutPlan => {
     jitter: mode === 'neat-grid' ? 0 : mode === 'dense-grid' ? 0.04 : randomBetween(0.04, 0.13),
     speedScale,
   };
+};
+
+const createSpecialPosition = (
+  index: number,
+  total: number,
+  layout: LayoutPlan,
+  width: number,
+  height: number,
+): { x: number; y: number; radiusScale: number } | null => {
+  const centerX = width * 0.5;
+  const centerY = height * 0.5;
+  const maxRadius = Math.hypot(width, height) * 0.46;
+  const progress = total <= 1 ? 0 : index / (total - 1);
+
+  if (layout.mode === 'spiral-vortex') {
+    const angle = progress * Math.PI * 13.5 + Math.sin(progress * Math.PI * 4) * 0.3;
+    const distance = maxRadius * Math.sqrt(progress) * 0.92;
+    return {
+      x: centerX + Math.cos(angle) * distance,
+      y: centerY + Math.sin(angle) * distance * 0.78,
+      radiusScale: 0.86 + (1 - progress) * 0.34,
+    };
+  }
+
+  if (layout.mode === 'radial-bloom') {
+    const petals = 7;
+    const ring = Math.floor(progress * 7);
+    const local = (progress * 7) % 1;
+    const angle = local * TAU + ring * 0.34;
+    const petalWave = 0.78 + Math.sin(angle * petals) * 0.18;
+    const distance = maxRadius * (0.16 + ring * 0.105) * petalWave;
+    return {
+      x: centerX + Math.cos(angle) * distance,
+      y: centerY + Math.sin(angle) * distance * 0.82,
+      radiusScale: 0.9 + (ring % 3) * 0.08,
+    };
+  }
+
+  if (layout.mode === 'nested-orbit') {
+    const orbitCount = 5;
+    const orbit = index % orbitCount;
+    const lap = Math.floor(index / orbitCount);
+    const lapCount = Math.max(1, Math.ceil(total / orbitCount));
+    const angle = (lap / lapCount) * TAU + orbit * 0.74;
+    const distance = maxRadius * (0.16 + orbit * 0.145);
+    return {
+      x: centerX + Math.cos(angle) * distance,
+      y: centerY + Math.sin(angle) * distance * 0.76,
+      radiusScale: orbit === 0 ? 1.18 : 0.86 + orbit * 0.045,
+    };
+  }
+
+  return null;
 };
 
 const generateModeDesigns = (mode: GenerationMode): UmbrellaDesign[] => {
@@ -132,31 +213,50 @@ export const createWorld = (width: number, height: number): WorldState => {
   const layout = createLayoutPlan(width, height);
   const modeDesigns = generateModeDesigns(mode);
   const umbrellas: UmbrellaInstance[] = [];
+  const totalSlots = layout.rows * layout.cols;
 
   for (let row = 0; row < layout.rows; row += 1) {
     for (let col = 0; col < layout.cols; col += 1) {
+      const index = row * layout.cols + col;
+      const specialPosition = createSpecialPosition(index, totalSlots, layout, width, height);
       const offsetX =
         layout.mode === 'offset-grid'
           ? (row % 2) * layout.spacingX * 0.5
           : layout.mode === 'diagonal-drift'
             ? row * layout.spacingX * 0.18
             : 0;
-      const waveX = layout.mode === 'diagonal-drift' ? Math.sin(row * 0.75) * layout.spacingX * 0.15 : 0;
-      const x =
+      const waveX =
+        layout.mode === 'diagonal-drift'
+          ? Math.sin(row * 0.75) * layout.spacingX * 0.15
+          : layout.mode === 'wave-grid'
+            ? Math.sin(row * 0.72) * layout.spacingX * 0.34
+            : 0;
+      const waveY = layout.mode === 'wave-grid' ? Math.sin(col * 0.88) * layout.spacingY * 0.16 : 0;
+      const gridX =
         (col * layout.spacingX + layout.spacingX * 0.5 + offsetX + waveX) % (width + layout.spacingX) -
         layout.spacingX * 0.5;
-      const y =
+      const gridY =
         layout.startY +
         row * layout.spacingY +
         (col % 2) * layout.spacingY * (layout.mode === 'neat-grid' ? 0 : 0.035) +
+        waveY +
         randomBetween(-layout.spacingY, layout.spacingY) * layout.jitter;
+      const normalizedX = (gridX - width * 0.5) / Math.max(1, width * 0.5);
+      const normalizedY = (gridY - height * 0.5) / Math.max(1, height * 0.5);
+      if (layout.mode === 'courtyard-grid' && normalizedX * normalizedX * 1.2 + normalizedY * normalizedY * 1.7 < 0.22) {
+        continue;
+      }
       const speedBase = randomBetween(0.00009, 0.00034) * layout.speedScale;
       const speedDirection = Math.random() < 0.5 ? -1 : 1;
       const mixedPulse = layout.speedMode === 'mixed' && (row + col) % 5 === 0 ? randomBetween(1.6, 2.3) : 1;
+      const radiusScale = specialPosition?.radiusScale ?? 1;
       umbrellas.push({
-        x: x + randomBetween(-layout.spacingX, layout.spacingX) * layout.jitter,
-        y,
-        radius: layout.radius * randomBetween(layout.mode === 'dense-grid' ? 0.82 : 0.88, layout.mode === 'wide-grid' ? 1.22 : 1.1),
+        x: specialPosition?.x ?? gridX + randomBetween(-layout.spacingX, layout.spacingX) * layout.jitter,
+        y: specialPosition?.y ?? gridY,
+        radius:
+          layout.radius *
+          radiusScale *
+          randomBetween(layout.mode === 'dense-grid' ? 0.82 : 0.88, layout.mode === 'wide-grid' ? 1.22 : 1.1),
         rotation: randomBetween(0, Math.PI * 2),
         rotationSpeed: speedBase * speedDirection * mixedPulse,
         design: pickDesign(mode, row, col, modeDesigns),
@@ -182,6 +282,7 @@ export const createWorld = (width: number, height: number): WorldState => {
     background: createBackground(),
     seedLabel: generateSeedLabel(),
     layoutMode: layout.mode,
+    layoutRarity: layout.rarity,
     speedMode: layout.speedMode,
   };
 };
