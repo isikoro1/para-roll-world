@@ -1,7 +1,8 @@
 import type { Footprint, FootprintState } from '../types';
 
 const WALK_INTERVAL = 34;
-const FOLLOW_RATE = 0.035;
+const FOLLOW_RATE = 0.024;
+const MAX_STEP_PER_FRAME = 1.15;
 
 export const createFootprintState = (width: number, height: number): FootprintState => {
   const x = width * 0.5;
@@ -28,8 +29,15 @@ export const updateFootprints = (state: FootprintState, deltaMs: number): void =
   const previousX = state.followerX;
   const previousY = state.followerY;
 
-  state.followerX += (state.cursorX - state.followerX) * FOLLOW_RATE;
-  state.followerY += (state.cursorY - state.followerY) * FOLLOW_RATE;
+  const targetDx = state.cursorX - state.followerX;
+  const targetDy = state.cursorY - state.followerY;
+  const targetDistance = Math.hypot(targetDx, targetDy);
+  const intendedStep = targetDistance * FOLLOW_RATE;
+  const step = Math.min(intendedStep, MAX_STEP_PER_FRAME * Math.max(0.55, deltaMs / 16.67));
+  if (targetDistance > 0.01) {
+    state.followerX += (targetDx / targetDistance) * step;
+    state.followerY += (targetDy / targetDistance) * step;
+  }
 
   const movedFromLast = Math.hypot(state.followerX - state.lastPrintX, state.followerY - state.lastPrintY);
   if (movedFromLast > WALK_INTERVAL) {

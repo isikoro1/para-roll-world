@@ -86,11 +86,11 @@ const createLayoutPlan = (width: number, height: number): LayoutPlan => {
 };
 
 const generateModeDesigns = (mode: GenerationMode): UmbrellaDesign[] => {
-  if (mode === 'unified') return [createUmbrellaDesign(Math.random() < 0.12 ? 'rare' : 'normal')];
+  if (mode === 'unified') return [createUmbrellaDesign(Math.random() < 0.16 ? 'rare' : 'normal')];
   if (mode === 'two-type') {
     return [
-      createUmbrellaDesign(Math.random() < 0.16 ? 'rare' : 'normal'),
-      createUmbrellaDesign(Math.random() < 0.16 ? 'rare' : 'normal'),
+      createUmbrellaDesign(Math.random() < 0.2 ? 'rare' : 'normal'),
+      createUmbrellaDesign(Math.random() < 0.2 ? 'rare' : 'normal'),
     ];
   }
   return [];
@@ -104,8 +104,8 @@ const pickDesign = (
 ): UmbrellaDesign => {
   if (mode === 'unified') return modeDesigns[0];
   if (mode === 'two-type') return modeDesigns[(row + col) % 2];
-  if (mode === 'rare-weird') return createUmbrellaDesign(Math.random() < 0.18 ? 'weird' : Math.random() < 0.12 ? 'rare' : 'normal');
-  return createUmbrellaDesign(Math.random() < 0.045 ? 'rare' : 'normal');
+  if (mode === 'rare-weird') return createUmbrellaDesign(Math.random() < 0.18 ? 'weird' : Math.random() < 0.2 ? 'rare' : 'normal');
+  return createUmbrellaDesign(Math.random() < 0.075 ? 'rare' : 'normal');
 };
 
 export const createWorld = (width: number, height: number): WorldState => {

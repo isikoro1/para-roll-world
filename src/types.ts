@@ -1,6 +1,7 @@
 export type GenerationMode = 'full-random' | 'unified' | 'two-type' | 'rare-weird';
 export type LayoutMode = 'neat-grid' | 'offset-grid' | 'wide-grid' | 'dense-grid' | 'diagonal-drift';
 export type SpeedMode = 'sleepy' | 'steady' | 'breezy' | 'mixed';
+export type RareUmbrellaStyle = 'jewels' | 'lace' | 'moon' | 'pinwheel' | 'confetti' | 'constellation';
 
 export type UmbrellaPatternType =
   | 'solid'
@@ -30,6 +31,7 @@ export interface UmbrellaDesign {
   wobble: number;
   weirdness: number;
   rarity: 'normal' | 'rare' | 'weird';
+  rareStyle: RareUmbrellaStyle;
   ornamentSeed: number;
 }
 

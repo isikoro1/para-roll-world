@@ -6,7 +6,7 @@ import { createWorld, drawBackground } from './lib/world';
 
 const SWIPE_REGENERATE_DISTANCE = 72;
 const IDLE_WALK_DELAY = 2600;
-const IDLE_TARGET_INTERVAL = 3600;
+const IDLE_TARGET_INTERVAL = 4400;
 
 const getCanvasPoint = (event: { clientX: number; clientY: number }, canvas: HTMLCanvasElement) => {
   const rect = canvas.getBoundingClientRect();
@@ -71,12 +71,15 @@ function App() {
 
       if (time - lastInputTimeRef.current > IDLE_WALK_DELAY && time >= nextIdleTargetTimeRef.current) {
         const margin = Math.min(120, Math.max(36, Math.min(width, height) * 0.12));
+        const wanderDistance = Math.min(180, Math.max(70, Math.min(width, height) * 0.18));
+        const angle = Math.random() * Math.PI * 2;
+        const distance = wanderDistance * (0.45 + Math.random() * 0.55);
         setFootprintTarget(
           footprints,
-          margin + Math.random() * Math.max(1, width - margin * 2),
-          margin + Math.random() * Math.max(1, height - margin * 2),
+          Math.min(width - margin, Math.max(margin, footprints.followerX + Math.cos(angle) * distance)),
+          Math.min(height - margin, Math.max(margin, footprints.followerY + Math.sin(angle) * distance)),
         );
-        nextIdleTargetTimeRef.current = time + IDLE_TARGET_INTERVAL + Math.random() * 2200;
+        nextIdleTargetTimeRef.current = time + IDLE_TARGET_INTERVAL + Math.random() * 2600;
       }
 
       updateFootprints(footprints, delta);
