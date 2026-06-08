@@ -44,51 +44,19 @@ body {
   user-select: none;
 }
 
-.hud {
+.seed-label {
   position: fixed;
   right: clamp(10px, 2vw, 22px);
   bottom: clamp(10px, 2vw, 20px);
   z-index: 2;
-  display: grid;
-  justify-items: end;
-  gap: 3px;
-  max-width: min(280px, calc(100vw - 20px));
-  padding: 7px 8px;
-  color: rgba(17, 24, 39, 0.42);
-  background: rgba(255, 255, 255, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.26);
-  border-radius: 6px;
-  box-shadow: 0 10px 26px rgba(32, 43, 70, 0.06);
-  backdrop-filter: blur(10px) saturate(1.05);
-  pointer-events: none;
-}
-
-.hud h1 {
-  margin: 0;
-  font-size: 11px;
-  line-height: 1;
-  letter-spacing: 0;
-  font-weight: 700;
-}
-
-.hud p,
-.hud span {
-  margin: 7px 0 0;
+  max-width: calc(100vw - 20px);
+  color: rgba(17, 24, 39, 0.3);
   font-size: 9px;
   line-height: 1;
   letter-spacing: 0;
-  text-transform: uppercase;
-  overflow-wrap: anywhere;
   text-align: right;
-}
-
-.hud span {
-  color: rgba(17, 24, 39, 0.34);
+  text-transform: uppercase;
+  text-shadow: 0 1px 10px rgba(255, 255, 255, 0.34);
   white-space: nowrap;
-}
-
-@media (max-width: 560px) {
-  .hud {
-    max-width: 210px;
-  }
+  pointer-events: none;
 }

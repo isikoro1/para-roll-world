@@ -5,6 +5,8 @@ import { drawUmbrella } from './lib/umbrella';
 import { createWorld, drawBackground } from './lib/world';
 
 const SWIPE_REGENERATE_DISTANCE = 72;
+const IDLE_WALK_DELAY = 2600;
+const IDLE_TARGET_INTERVAL = 3600;
 
 const getCanvasPoint = (event: { clientX: number; clientY: number }, canvas: HTMLCanvasElement) => {
   const rect = canvas.getBoundingClientRect();
@@ -14,16 +16,15 @@ const getCanvasPoint = (event: { clientX: number; clientY: number }, canvas: HTM
   };
 };
 
-const formatWorldLabel = (world: WorldState): string => `${world.mode} / ${world.layoutMode} / ${world.speedMode}`;
-
 function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const worldRef = useRef<WorldState | null>(null);
   const footprintsRef = useRef<FootprintState | null>(null);
   const frameRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(performance.now());
+  const lastInputTimeRef = useRef<number>(performance.now());
+  const nextIdleTargetTimeRef = useRef<number>(0);
   const pointerStartRef = useRef<{ x: number; y: number; pointerId: number } | null>(null);
-  const [modeLabel, setModeLabel] = useState('preparing');
   const [seedLabel, setSeedLabel] = useState('');
 
   const regenerate = () => {
@@ -31,7 +32,6 @@ function App() {
     if (!canvas) return;
 
     worldRef.current = createWorld(canvas.clientWidth, canvas.clientHeight);
-    setModeLabel(formatWorldLabel(worldRef.current));
     setSeedLabel(worldRef.current.seedLabel);
   };
 
@@ -53,7 +53,6 @@ function App() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       worldRef.current = createWorld(width, height);
       footprintsRef.current = createFootprintState(width, height);
-      setModeLabel(formatWorldLabel(worldRef.current));
       setSeedLabel(worldRef.current.seedLabel);
     };
 
@@ -70,8 +69,19 @@ function App() {
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
 
+      if (time - lastInputTimeRef.current > IDLE_WALK_DELAY && time >= nextIdleTargetTimeRef.current) {
+        const margin = Math.min(120, Math.max(36, Math.min(width, height) * 0.12));
+        setFootprintTarget(
+          footprints,
+          margin + Math.random() * Math.max(1, width - margin * 2),
+          margin + Math.random() * Math.max(1, height - margin * 2),
+        );
+        nextIdleTargetTimeRef.current = time + IDLE_TARGET_INTERVAL + Math.random() * 2200;
+      }
+
       updateFootprints(footprints, delta);
       drawBackground(ctx, world, width, height);
+      drawFootprints(ctx, footprints.prints);
 
       for (const umbrella of world.umbrellas) {
         umbrella.rotation += umbrella.rotationSpeed * delta;
@@ -81,8 +91,6 @@ function App() {
         drawUmbrella(ctx, umbrella.design, umbrella.radius);
         ctx.restore();
       }
-
-      drawFootprints(ctx, footprints.prints);
       frameRef.current = requestAnimationFrame(drawFrame);
     };
 
@@ -91,6 +99,8 @@ function App() {
       if (!state) return;
       const point = getCanvasPoint(event, canvas);
       setFootprintTarget(state, point.x, point.y);
+      lastInputTimeRef.current = performance.now();
+      nextIdleTargetTimeRef.current = lastInputTimeRef.current + IDLE_WALK_DELAY;
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -126,6 +136,8 @@ function App() {
           if (!canvas) return;
           const point = getCanvasPoint(event, canvas);
           pointerStartRef.current = { ...point, pointerId: event.pointerId };
+          lastInputTimeRef.current = performance.now();
+          nextIdleTargetTimeRef.current = lastInputTimeRef.current + IDLE_WALK_DELAY;
           canvas.setPointerCapture(event.pointerId);
         }}
         onPointerMove={(event) => {
@@ -134,6 +146,8 @@ function App() {
           if (!canvas || !state) return;
           const point = getCanvasPoint(event, canvas);
           setFootprintTarget(state, point.x, point.y);
+          lastInputTimeRef.current = performance.now();
+          nextIdleTargetTimeRef.current = lastInputTimeRef.current + IDLE_WALK_DELAY;
         }}
         onPointerUp={(event) => {
           const canvas = canvasRef.current;
@@ -142,6 +156,8 @@ function App() {
           if (!canvas || !start || start.pointerId !== event.pointerId) return;
           const point = getCanvasPoint(event, canvas);
           if (state) setFootprintTarget(state, point.x, point.y);
+          lastInputTimeRef.current = performance.now();
+          nextIdleTargetTimeRef.current = lastInputTimeRef.current + IDLE_WALK_DELAY;
           if (Math.hypot(point.x - start.x, point.y - start.y) >= SWIPE_REGENERATE_DISTANCE) {
             regenerate();
           }
@@ -152,11 +168,7 @@ function App() {
           pointerStartRef.current = null;
         }}
       />
-      <section className="hud" aria-label="app info">
-        <h1>para-roll-world</h1>
-        <p>{modeLabel}</p>
-        <span>{seedLabel}</span>
-      </section>
+      <span className="seed-label" aria-label="seed value">{seedLabel}</span>
     </main>
   );
 }

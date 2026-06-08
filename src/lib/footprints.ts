@@ -1,7 +1,7 @@
 import type { Footprint, FootprintState } from '../types';
 
 const WALK_INTERVAL = 34;
-const FOLLOW_RATE = 0.04;
+const FOLLOW_RATE = 0.035;
 
 export const createFootprintState = (width: number, height: number): FootprintState => {
   const x = width * 0.5;
@@ -65,20 +65,24 @@ const drawSinglePrint = (ctx: CanvasRenderingContext2D, print: Footprint): void 
 
   ctx.save();
   ctx.translate(print.x, print.y);
-  ctx.rotate(print.angle + Math.PI / 2 + print.side * 0.08);
-  ctx.globalAlpha = alpha * 0.58;
-  ctx.fillStyle = 'rgba(39, 45, 59, 1)';
+  ctx.rotate(print.angle + Math.PI / 2 + print.side * 0.05);
+  ctx.globalAlpha = alpha * 0.42;
+  ctx.fillStyle = 'rgba(32, 38, 50, 1)';
 
   ctx.beginPath();
-  ctx.ellipse(0, 0, 5.3, 12.5, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, -3.2, 4.8, 8.6, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.globalAlpha = alpha * 0.36;
-  for (let i = -2; i <= 2; i += 1) {
-    ctx.beginPath();
-    ctx.arc(i * 2.5, -12.8 - Math.abs(i) * 0.6, 1.45, 0, Math.PI * 2);
-    ctx.fill();
-  }
+  ctx.globalAlpha = alpha * 0.3;
+  ctx.beginPath();
+  ctx.ellipse(0, 6.2, 5.4, 5.8, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.globalAlpha = alpha * 0.16;
+  ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+  ctx.beginPath();
+  ctx.ellipse(0, 0.5, 2.2, 2.9, 0, 0, Math.PI * 2);
+  ctx.fill();
   ctx.restore();
 };
 
