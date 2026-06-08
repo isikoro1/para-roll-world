@@ -1,4 +1,12 @@
-import type { GenerationMode, LayoutMode, SpeedMode, UmbrellaDesign, UmbrellaInstance, WorldState } from '../types';
+import type {
+  GenerationMode,
+  LayoutMode,
+  SpeedMode,
+  UmbrellaDesign,
+  UmbrellaInstance,
+  UmbrellaRarity,
+  WorldState,
+} from '../types';
 import { color, generateSeedLabel, pick, randomBetween, randomInt, weightedMode } from './random';
 import { createUmbrellaDesign } from './umbrella';
 
@@ -86,14 +94,22 @@ const createLayoutPlan = (width: number, height: number): LayoutPlan => {
 };
 
 const generateModeDesigns = (mode: GenerationMode): UmbrellaDesign[] => {
-  if (mode === 'unified') return [createUmbrellaDesign(Math.random() < 0.16 ? 'rare' : 'normal')];
+  if (mode === 'unified') return [createUmbrellaDesign(pickLayeredRarity(0.16, 0.035, 0.008))];
   if (mode === 'two-type') {
     return [
-      createUmbrellaDesign(Math.random() < 0.2 ? 'rare' : 'normal'),
-      createUmbrellaDesign(Math.random() < 0.2 ? 'rare' : 'normal'),
+      createUmbrellaDesign(pickLayeredRarity(0.2, 0.045, 0.01)),
+      createUmbrellaDesign(pickLayeredRarity(0.2, 0.045, 0.01)),
     ];
   }
   return [];
+};
+
+const pickLayeredRarity = (rareChance: number, superChance: number, mythicChance: number): UmbrellaRarity => {
+  const value = Math.random();
+  if (value < mythicChance) return 'mythic';
+  if (value < mythicChance + superChance) return 'superRare';
+  if (value < mythicChance + superChance + rareChance) return 'rare';
+  return 'normal';
 };
 
 const pickDesign = (
@@ -104,8 +120,11 @@ const pickDesign = (
 ): UmbrellaDesign => {
   if (mode === 'unified') return modeDesigns[0];
   if (mode === 'two-type') return modeDesigns[(row + col) % 2];
-  if (mode === 'rare-weird') return createUmbrellaDesign(Math.random() < 0.18 ? 'weird' : Math.random() < 0.2 ? 'rare' : 'normal');
-  return createUmbrellaDesign(Math.random() < 0.075 ? 'rare' : 'normal');
+  if (mode === 'rare-weird') {
+    if (Math.random() < 0.16) return createUmbrellaDesign('weird');
+    return createUmbrellaDesign(pickLayeredRarity(0.22, 0.075, 0.025));
+  }
+  return createUmbrellaDesign(pickLayeredRarity(0.08, 0.018, 0.004));
 };
 
 export const createWorld = (width: number, height: number): WorldState => {
@@ -146,7 +165,7 @@ export const createWorld = (width: number, height: number): WorldState => {
   }
 
   if (layout.mode === 'wide-grid' && Math.random() < 0.45) {
-    const spotlightDesign = createUmbrellaDesign(pick(['rare', 'weird'] as const));
+    const spotlightDesign = createUmbrellaDesign(pick(['rare', 'superRare', 'mythic', 'weird'] as const));
     umbrellas.push({
       x: width * randomBetween(0.25, 0.75),
       y: height * randomBetween(0.22, 0.78),

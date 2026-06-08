@@ -1,27 +1,36 @@
-import type { RareUmbrellaStyle, UmbrellaDesign } from '../types';
+import type {
+  MythicUmbrellaStyle,
+  RareUmbrellaStyle,
+  SuperRareUmbrellaStyle,
+  UmbrellaDesign,
+  UmbrellaRarity,
+} from '../types';
 import { generatePalette, patternTypes, pick, randomBetween, randomInt } from './random';
 
 const TAU = Math.PI * 2;
 
-type DesignRarity = 'normal' | 'rare' | 'weird';
-
 const rareStyles: readonly RareUmbrellaStyle[] = ['jewels', 'lace', 'moon', 'pinwheel', 'confetti', 'constellation'];
+const superRareStyles: readonly SuperRareUmbrellaStyle[] = ['halo', 'sundial', 'petalCrown', 'prismOrbit'];
+const mythicStyles: readonly MythicUmbrellaStyle[] = ['aurora', 'eclipse', 'cometMap'];
 
-export const createUmbrellaDesign = (rarity: DesignRarity = 'normal'): UmbrellaDesign => {
+export const createUmbrellaDesign = (rarity: UmbrellaRarity = 'normal'): UmbrellaDesign => {
   const isWeird = rarity === 'weird';
-  const isRare = rarity === 'rare';
+  const isRare = rarity === 'rare' || rarity === 'superRare' || rarity === 'mythic';
+  const isUpperRare = rarity === 'superRare' || rarity === 'mythic';
 
   return {
     palette: generatePalette(isWeird || isRare),
     pattern: isWeird ? 'weird' : pick(patternTypes),
-    segments: isWeird ? randomInt(7, 15) : isRare ? pick([9, 11, 13, 18]) : pick([8, 10, 12, 14, 16]),
-    dotCount: isRare ? randomInt(24, 48) : randomInt(12, 32),
-    stripeCount: isRare ? randomInt(12, 22) : randomInt(7, 16),
-    ringCount: isRare ? randomInt(4, 8) : randomInt(2, 5),
-    wobble: isWeird ? randomBetween(0.012, 0.028) : isRare ? randomBetween(0.006, 0.018) : randomBetween(0, 0.012),
-    weirdness: isWeird ? randomBetween(0.22, 0.5) : isRare ? randomBetween(0.16, 0.34) : randomBetween(0, 0.16),
+    segments: isWeird ? randomInt(7, 15) : isRare ? pick([9, 11, 13, 18, 20]) : pick([8, 10, 12, 14, 16]),
+    dotCount: isUpperRare ? randomInt(34, 58) : isRare ? randomInt(24, 48) : randomInt(12, 32),
+    stripeCount: isUpperRare ? randomInt(16, 28) : isRare ? randomInt(12, 22) : randomInt(7, 16),
+    ringCount: isUpperRare ? randomInt(6, 10) : isRare ? randomInt(4, 8) : randomInt(2, 5),
+    wobble: isWeird ? randomBetween(0.012, 0.028) : isRare ? randomBetween(0.004, 0.016) : randomBetween(0, 0.012),
+    weirdness: isWeird ? randomBetween(0.22, 0.5) : isRare ? randomBetween(0.16, 0.36) : randomBetween(0, 0.16),
     rarity,
     rareStyle: pick(rareStyles),
+    superRareStyle: pick(superRareStyles),
+    mythicStyle: pick(mythicStyles),
     ornamentSeed: randomBetween(0, TAU),
   };
 };
@@ -123,7 +132,17 @@ const drawPattern = (ctx: CanvasRenderingContext2D, design: UmbrellaDesign, radi
     }
   }
 
-  if (design.rarity === 'rare') drawRareDecoration(ctx, design, radius);
+  if (design.rarity === 'rare' || design.rarity === 'superRare' || design.rarity === 'mythic') {
+    drawRareDecoration(ctx, design, radius);
+  }
+
+  if (design.rarity === 'superRare' || design.rarity === 'mythic') {
+    drawSuperRareDecoration(ctx, design, radius);
+  }
+
+  if (design.rarity === 'mythic') {
+    drawMythicDecoration(ctx, design, radius);
+  }
 
   if (pattern === 'weird') {
     ctx.fillStyle = palette.dark;
@@ -259,6 +278,145 @@ const drawRareDecoration = (ctx: CanvasRenderingContext2D, design: UmbrellaDesig
       ctx.fill();
       previousX = x;
       previousY = y;
+    }
+    ctx.globalAlpha = 1;
+  }
+};
+
+const drawSuperRareDecoration = (ctx: CanvasRenderingContext2D, design: UmbrellaDesign, radius: number): void => {
+  const { palette, segments, superRareStyle } = design;
+
+  if (superRareStyle === 'halo') {
+    for (let i = 0; i < 3; i += 1) {
+      ctx.beginPath();
+      ctx.strokeStyle = i % 2 === 0 ? palette.light : palette.accent;
+      ctx.globalAlpha = 0.36 - i * 0.07;
+      ctx.lineWidth = Math.max(1, radius * (0.018 + i * 0.006));
+      ctx.arc(0, 0, radius * (0.34 + i * 0.17), 0, TAU);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  if (superRareStyle === 'sundial') {
+    ctx.strokeStyle = palette.light;
+    ctx.globalAlpha = 0.58;
+    ctx.lineWidth = Math.max(1, radius * 0.016);
+    for (let i = 0; i < segments * 2; i += 1) {
+      const angle = design.ornamentSeed + (i / (segments * 2)) * TAU;
+      const inner = i % 2 === 0 ? radius * 0.24 : radius * 0.42;
+      const outer = radius * 0.82;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+      ctx.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  if (superRareStyle === 'petalCrown') {
+    for (let i = 0; i < segments; i += 1) {
+      const angle = design.ornamentSeed + (i / segments) * TAU;
+      ctx.save();
+      ctx.rotate(angle);
+      ctx.fillStyle = i % 2 === 0 ? palette.light : palette.accent;
+      ctx.globalAlpha = 0.48;
+      ctx.beginPath();
+      ctx.ellipse(radius * 0.58, 0, radius * 0.055, radius * 0.19, 0, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  if (superRareStyle === 'prismOrbit') {
+    for (let i = 0; i < 10; i += 1) {
+      const angle = design.ornamentSeed + i * 0.68;
+      const distance = radius * (0.28 + (i % 5) * 0.105);
+      const size = radius * 0.045;
+      ctx.save();
+      ctx.translate(Math.cos(angle) * distance, Math.sin(angle) * distance);
+      ctx.rotate(angle + Math.PI / 4);
+      ctx.fillStyle = i % 3 === 0 ? palette.light : i % 3 === 1 ? palette.accent : palette.secondary;
+      ctx.globalAlpha = 0.58;
+      ctx.beginPath();
+      ctx.moveTo(0, -size);
+      ctx.lineTo(size, 0);
+      ctx.lineTo(0, size);
+      ctx.lineTo(-size, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+  }
+};
+
+const drawMythicDecoration = (ctx: CanvasRenderingContext2D, design: UmbrellaDesign, radius: number): void => {
+  const { palette, mythicStyle, segments } = design;
+
+  if (mythicStyle === 'aurora') {
+    ctx.save();
+    drawCanopyShape(ctx, radius * 0.98, design.wobble);
+    ctx.clip();
+    for (let i = 0; i < 5; i += 1) {
+      ctx.strokeStyle = i % 2 === 0 ? palette.light : palette.accent;
+      ctx.globalAlpha = 0.22;
+      ctx.lineWidth = Math.max(2, radius * 0.055);
+      ctx.beginPath();
+      const y = -radius * 0.45 + i * radius * 0.22;
+      ctx.moveTo(-radius * 0.85, y);
+      ctx.bezierCurveTo(-radius * 0.28, y - radius * 0.18, radius * 0.22, y + radius * 0.18, radius * 0.86, y);
+      ctx.stroke();
+    }
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  }
+
+  if (mythicStyle === 'eclipse') {
+    ctx.beginPath();
+    ctx.fillStyle = palette.dark;
+    ctx.globalAlpha = 0.18;
+    ctx.arc(0, 0, radius * 0.44, 0, TAU);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.strokeStyle = palette.light;
+    ctx.globalAlpha = 0.5;
+    ctx.lineWidth = Math.max(1, radius * 0.024);
+    ctx.arc(0, 0, radius * 0.49, 0, TAU);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  if (mythicStyle === 'cometMap') {
+    ctx.strokeStyle = palette.light;
+    ctx.fillStyle = palette.light;
+    ctx.globalAlpha = 0.5;
+    ctx.lineWidth = Math.max(1, radius * 0.014);
+    for (let i = 0; i < 5; i += 1) {
+      const angle = design.ornamentSeed + (i / 5) * TAU;
+      const start = radius * (0.26 + (i % 2) * 0.12);
+      const end = radius * 0.8;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(angle) * start, Math.sin(angle) * start);
+      ctx.quadraticCurveTo(
+        Math.cos(angle + 0.4) * radius * 0.55,
+        Math.sin(angle + 0.4) * radius * 0.55,
+        Math.cos(angle + 0.78) * end,
+        Math.sin(angle + 0.78) * end,
+      );
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(Math.cos(angle + 0.78) * end, Math.sin(angle + 0.78) * end, radius * 0.028, 0, TAU);
+      ctx.fill();
+    }
+
+    for (let i = 0; i < segments; i += 3) {
+      const angle = design.ornamentSeed + (i / segments) * TAU;
+      ctx.beginPath();
+      ctx.arc(Math.cos(angle) * radius * 0.36, Math.sin(angle) * radius * 0.36, radius * 0.012, 0, TAU);
+      ctx.fill();
     }
     ctx.globalAlpha = 1;
   }

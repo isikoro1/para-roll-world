@@ -1,7 +1,10 @@
 export type GenerationMode = 'full-random' | 'unified' | 'two-type' | 'rare-weird';
 export type LayoutMode = 'neat-grid' | 'offset-grid' | 'wide-grid' | 'dense-grid' | 'diagonal-drift';
 export type SpeedMode = 'sleepy' | 'steady' | 'breezy' | 'mixed';
+export type UmbrellaRarity = 'normal' | 'rare' | 'superRare' | 'mythic' | 'weird';
 export type RareUmbrellaStyle = 'jewels' | 'lace' | 'moon' | 'pinwheel' | 'confetti' | 'constellation';
+export type SuperRareUmbrellaStyle = 'halo' | 'sundial' | 'petalCrown' | 'prismOrbit';
+export type MythicUmbrellaStyle = 'aurora' | 'eclipse' | 'cometMap';
 
 export type UmbrellaPatternType =
   | 'solid'
@@ -30,8 +33,10 @@ export interface UmbrellaDesign {
   ringCount: number;
   wobble: number;
   weirdness: number;
-  rarity: 'normal' | 'rare' | 'weird';
+  rarity: UmbrellaRarity;
   rareStyle: RareUmbrellaStyle;
+  superRareStyle: SuperRareUmbrellaStyle;
+  mythicStyle: MythicUmbrellaStyle;
   ornamentSeed: number;
 }
 
