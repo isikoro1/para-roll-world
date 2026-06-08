@@ -2,6 +2,8 @@
 
 `para-roll-world` は、真上から見たたくさんの傘が静かに回転し、足跡がマウスカーソルをゆっくり追いかける、落ち着いた抽象アニメーションアプリです。
 
+公開 URL: https://isikoro1.github.io/pararoll-world/
+
 ## Tech stack
 
 - Vite
