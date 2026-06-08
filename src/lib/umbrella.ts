@@ -3,16 +3,25 @@ import { generatePalette, patternTypes, pick, randomBetween, randomInt } from '.
 
 const TAU = Math.PI * 2;
 
-export const createUmbrellaDesign = (weird = false): UmbrellaDesign => ({
-  palette: generatePalette(weird),
-  pattern: weird ? 'weird' : pick(patternTypes),
-  segments: weird ? randomInt(7, 15) : pick([8, 10, 12, 14, 16]),
-  dotCount: randomInt(12, 32),
-  stripeCount: randomInt(7, 16),
-  ringCount: randomInt(2, 5),
-  wobble: weird ? randomBetween(0.05, 0.2) : randomBetween(0, 0.04),
-  weirdness: weird ? randomBetween(0.45, 1) : randomBetween(0, 0.22),
-});
+type DesignRarity = 'normal' | 'rare' | 'weird';
+
+export const createUmbrellaDesign = (rarity: DesignRarity = 'normal'): UmbrellaDesign => {
+  const isWeird = rarity === 'weird';
+  const isRare = rarity === 'rare';
+
+  return {
+    palette: generatePalette(isWeird || isRare),
+    pattern: isWeird ? 'weird' : pick(patternTypes),
+    segments: isWeird ? randomInt(7, 15) : isRare ? pick([9, 11, 13, 18]) : pick([8, 10, 12, 14, 16]),
+    dotCount: isRare ? randomInt(24, 48) : randomInt(12, 32),
+    stripeCount: isRare ? randomInt(12, 22) : randomInt(7, 16),
+    ringCount: isRare ? randomInt(4, 8) : randomInt(2, 5),
+    wobble: isWeird ? randomBetween(0.05, 0.2) : isRare ? randomBetween(0.02, 0.09) : randomBetween(0, 0.04),
+    weirdness: isWeird ? randomBetween(0.45, 1) : isRare ? randomBetween(0.24, 0.52) : randomBetween(0, 0.22),
+    rarity,
+    ornamentSeed: randomBetween(0, TAU),
+  };
+};
 
 const canopyPoint = (angle: number, radius: number, wobble: number): [number, number] => {
   const warped = radius * (1 + Math.sin(angle * 3.2) * wobble + Math.cos(angle * 5.1) * wobble * 0.55);
@@ -109,6 +118,59 @@ const drawPattern = (ctx: CanvasRenderingContext2D, design: UmbrellaDesign, radi
       ctx.ellipse(Math.cos(angle) * radius * 0.38, Math.sin(angle) * radius * 0.38, radius * 0.14, radius * 0.34, angle, 0, TAU);
       ctx.fill();
     }
+  }
+
+  if (design.rarity === 'rare') {
+    const jewelCount = Math.max(7, Math.floor(segments * 0.75));
+    for (let i = 0; i < jewelCount; i += 1) {
+      const angle = design.ornamentSeed + (i / jewelCount) * TAU;
+      const distance = radius * (0.47 + (i % 3) * 0.11);
+      const size = radius * (0.035 + (i % 2) * 0.016);
+      ctx.save();
+      ctx.translate(Math.cos(angle) * distance, Math.sin(angle) * distance);
+      ctx.rotate(angle);
+      ctx.fillStyle = i % 2 === 0 ? palette.light : palette.accent;
+      ctx.beginPath();
+      ctx.moveTo(0, -size * 2.1);
+      ctx.lineTo(size * 0.72, -size * 0.48);
+      ctx.lineTo(size * 2, 0);
+      ctx.lineTo(size * 0.72, size * 0.48);
+      ctx.lineTo(0, size * 2.1);
+      ctx.lineTo(-size * 0.72, size * 0.48);
+      ctx.lineTo(-size * 2, 0);
+      ctx.lineTo(-size * 0.72, -size * 0.48);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.beginPath();
+    ctx.strokeStyle = palette.dark;
+    ctx.globalAlpha = 0.22;
+    ctx.lineWidth = Math.max(1, radius * 0.018);
+    ctx.arc(radius * 0.12, -radius * 0.08, radius * 0.58, 0.18, TAU * 0.78);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  if (pattern === 'weird') {
+    ctx.fillStyle = palette.dark;
+    ctx.globalAlpha = 0.18;
+    for (let i = 0; i < 5; i += 1) {
+      const angle = design.ornamentSeed + i * 1.37;
+      ctx.beginPath();
+      ctx.ellipse(
+        Math.cos(angle) * radius * 0.5,
+        Math.sin(angle) * radius * 0.42,
+        radius * 0.04,
+        radius * 0.2,
+        angle + design.weirdness,
+        0,
+        TAU,
+      );
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
   }
 };
 

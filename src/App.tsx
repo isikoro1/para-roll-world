@@ -4,7 +4,9 @@ import { createFootprintState, drawFootprints, setFootprintTarget, updateFootpri
 import { drawUmbrella } from './lib/umbrella';
 import { createWorld, drawBackground } from './lib/world';
 
-const getCanvasPoint = (event: MouseEvent | React.MouseEvent<HTMLCanvasElement>, canvas: HTMLCanvasElement) => {
+const SWIPE_REGENERATE_DISTANCE = 72;
+
+const getCanvasPoint = (event: { clientX: number; clientY: number }, canvas: HTMLCanvasElement) => {
   const rect = canvas.getBoundingClientRect();
   return {
     x: event.clientX - rect.left,
@@ -12,12 +14,15 @@ const getCanvasPoint = (event: MouseEvent | React.MouseEvent<HTMLCanvasElement>,
   };
 };
 
+const formatWorldLabel = (world: WorldState): string => `${world.mode} / ${world.layoutMode} / ${world.speedMode}`;
+
 function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const worldRef = useRef<WorldState | null>(null);
   const footprintsRef = useRef<FootprintState | null>(null);
   const frameRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(performance.now());
+  const pointerStartRef = useRef<{ x: number; y: number; pointerId: number } | null>(null);
   const [modeLabel, setModeLabel] = useState('preparing');
   const [seedLabel, setSeedLabel] = useState('');
 
@@ -26,7 +31,7 @@ function App() {
     if (!canvas) return;
 
     worldRef.current = createWorld(canvas.clientWidth, canvas.clientHeight);
-    setModeLabel(worldRef.current.mode);
+    setModeLabel(formatWorldLabel(worldRef.current));
     setSeedLabel(worldRef.current.seedLabel);
   };
 
@@ -48,7 +53,7 @@ function App() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       worldRef.current = createWorld(width, height);
       footprintsRef.current = createFootprintState(width, height);
-      setModeLabel(worldRef.current.mode);
+      setModeLabel(formatWorldLabel(worldRef.current));
       setSeedLabel(worldRef.current.seedLabel);
     };
 
@@ -115,18 +120,39 @@ function App() {
       <canvas
         ref={canvasRef}
         className="world-canvas"
-        aria-label="回転する傘と足跡の抽象アニメーション"
-        onClick={(event) => {
+        aria-label="para-roll-world canvas animation"
+        onPointerDown={(event) => {
+          const canvas = canvasRef.current;
+          if (!canvas) return;
+          const point = getCanvasPoint(event, canvas);
+          pointerStartRef.current = { ...point, pointerId: event.pointerId };
+          canvas.setPointerCapture(event.pointerId);
+        }}
+        onPointerMove={(event) => {
           const canvas = canvasRef.current;
           const state = footprintsRef.current;
-          if (canvas && state) {
-            const point = getCanvasPoint(event, canvas);
-            setFootprintTarget(state, point.x, point.y);
+          if (!canvas || !state) return;
+          const point = getCanvasPoint(event, canvas);
+          setFootprintTarget(state, point.x, point.y);
+        }}
+        onPointerUp={(event) => {
+          const canvas = canvasRef.current;
+          const start = pointerStartRef.current;
+          const state = footprintsRef.current;
+          if (!canvas || !start || start.pointerId !== event.pointerId) return;
+          const point = getCanvasPoint(event, canvas);
+          if (state) setFootprintTarget(state, point.x, point.y);
+          if (Math.hypot(point.x - start.x, point.y - start.y) >= SWIPE_REGENERATE_DISTANCE) {
+            regenerate();
           }
-          regenerate();
+          pointerStartRef.current = null;
+          canvas.releasePointerCapture(event.pointerId);
+        }}
+        onPointerCancel={() => {
+          pointerStartRef.current = null;
         }}
       />
-      <section className="hud" aria-label="アプリ情報">
+      <section className="hud" aria-label="app info">
         <div>
           <h1>para-roll-world</h1>
           <p>{modeLabel}</p>

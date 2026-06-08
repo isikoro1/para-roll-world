@@ -1,4 +1,6 @@
 export type GenerationMode = 'full-random' | 'unified' | 'two-type' | 'rare-weird';
+export type LayoutMode = 'neat-grid' | 'offset-grid' | 'wide-grid' | 'dense-grid' | 'diagonal-drift';
+export type SpeedMode = 'sleepy' | 'steady' | 'breezy' | 'mixed';
 
 export type UmbrellaPatternType =
   | 'solid'
@@ -27,6 +29,8 @@ export interface UmbrellaDesign {
   ringCount: number;
   wobble: number;
   weirdness: number;
+  rarity: 'normal' | 'rare' | 'weird';
+  ornamentSeed: number;
 }
 
 export interface UmbrellaInstance {
@@ -68,4 +72,6 @@ export interface WorldState {
     glow: string;
   };
   seedLabel: string;
+  layoutMode: LayoutMode;
+  speedMode: SpeedMode;
 }
