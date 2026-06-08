@@ -16,15 +16,15 @@ export const createUmbrellaDesign = (rarity: DesignRarity = 'normal'): UmbrellaD
     dotCount: isRare ? randomInt(24, 48) : randomInt(12, 32),
     stripeCount: isRare ? randomInt(12, 22) : randomInt(7, 16),
     ringCount: isRare ? randomInt(4, 8) : randomInt(2, 5),
-    wobble: isWeird ? randomBetween(0.05, 0.2) : isRare ? randomBetween(0.02, 0.09) : randomBetween(0, 0.04),
-    weirdness: isWeird ? randomBetween(0.45, 1) : isRare ? randomBetween(0.24, 0.52) : randomBetween(0, 0.22),
+    wobble: isWeird ? randomBetween(0.012, 0.028) : isRare ? randomBetween(0.006, 0.018) : randomBetween(0, 0.012),
+    weirdness: isWeird ? randomBetween(0.22, 0.5) : isRare ? randomBetween(0.16, 0.34) : randomBetween(0, 0.16),
     rarity,
     ornamentSeed: randomBetween(0, TAU),
   };
 };
 
 const canopyPoint = (angle: number, radius: number, wobble: number): [number, number] => {
-  const warped = radius * (1 + Math.sin(angle * 3.2) * wobble + Math.cos(angle * 5.1) * wobble * 0.55);
+  const warped = radius * (1 + Math.sin(angle * 8) * wobble * 0.45 + Math.cos(angle * 16) * wobble * 0.18);
 
   return [Math.cos(angle) * warped, Math.sin(angle) * warped];
 };
@@ -68,7 +68,7 @@ const drawPattern = (ctx: CanvasRenderingContext2D, design: UmbrellaDesign, radi
       const checker = pattern === 'checker' && i % 4 < 2;
       ctx.fillStyle = checker || i % 2 === 0 ? palette.accent : palette.secondary;
       if (pattern === 'weird' && i % 3 === 0) ctx.fillStyle = palette.light;
-      drawSegment(ctx, start, end, radius * (pattern === 'weird' && i % 5 === 0 ? 0.88 : 1), wobble);
+      drawSegment(ctx, start, end, radius, wobble);
       ctx.fill();
     }
   }
@@ -155,15 +155,15 @@ const drawPattern = (ctx: CanvasRenderingContext2D, design: UmbrellaDesign, radi
 
   if (pattern === 'weird') {
     ctx.fillStyle = palette.dark;
-    ctx.globalAlpha = 0.18;
-    for (let i = 0; i < 5; i += 1) {
+    ctx.globalAlpha = 0.14;
+    for (let i = 0; i < 6; i += 1) {
       const angle = design.ornamentSeed + i * 1.37;
       ctx.beginPath();
       ctx.ellipse(
-        Math.cos(angle) * radius * 0.5,
-        Math.sin(angle) * radius * 0.42,
-        radius * 0.04,
-        radius * 0.2,
+        Math.cos(angle) * radius * 0.46,
+        Math.sin(angle) * radius * 0.46,
+        radius * 0.035,
+        radius * 0.14,
         angle + design.weirdness,
         0,
         TAU,

@@ -46,54 +46,49 @@ body {
 
 .hud {
   position: fixed;
-  left: clamp(16px, 3vw, 36px);
-  top: clamp(16px, 3vw, 30px);
+  right: clamp(10px, 2vw, 22px);
+  bottom: clamp(10px, 2vw, 20px);
   z-index: 2;
-  display: flex;
-  align-items: flex-end;
-  gap: 18px;
-  max-width: calc(100vw - 32px);
-  padding: 12px 14px;
-  color: rgba(17, 24, 39, 0.88);
-  background: rgba(255, 255, 255, 0.42);
-  border: 1px solid rgba(255, 255, 255, 0.62);
-  border-radius: 8px;
-  box-shadow: 0 14px 38px rgba(32, 43, 70, 0.12);
-  backdrop-filter: blur(16px) saturate(1.2);
+  display: grid;
+  justify-items: end;
+  gap: 3px;
+  max-width: min(280px, calc(100vw - 20px));
+  padding: 7px 8px;
+  color: rgba(17, 24, 39, 0.42);
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: 6px;
+  box-shadow: 0 10px 26px rgba(32, 43, 70, 0.06);
+  backdrop-filter: blur(10px) saturate(1.05);
+  pointer-events: none;
 }
 
 .hud h1 {
   margin: 0;
-  font-size: clamp(20px, 3.2vw, 34px);
+  font-size: 11px;
   line-height: 1;
   letter-spacing: 0;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .hud p,
 .hud span {
   margin: 7px 0 0;
-  font-size: 12px;
+  font-size: 9px;
   line-height: 1;
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
   text-transform: uppercase;
   overflow-wrap: anywhere;
+  text-align: right;
 }
 
 .hud span {
-  margin-bottom: 1px;
-  color: rgba(17, 24, 39, 0.62);
+  color: rgba(17, 24, 39, 0.34);
   white-space: nowrap;
 }
 
 @media (max-width: 560px) {
   .hud {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 7px;
-  }
-
-  .hud span {
-    margin: 0;
+    max-width: 210px;
   }
 }

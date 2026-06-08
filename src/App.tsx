@@ -153,10 +153,8 @@ function App() {
         }}
       />
       <section className="hud" aria-label="app info">
-        <div>
-          <h1>para-roll-world</h1>
-          <p>{modeLabel}</p>
-        </div>
+        <h1>para-roll-world</h1>
+        <p>{modeLabel}</p>
         <span>{seedLabel}</span>
       </section>
     </main>
