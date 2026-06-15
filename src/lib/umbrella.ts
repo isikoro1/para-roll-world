@@ -7,12 +7,18 @@ import type {
 } from '../types';
 import { generatePalette, patternTypes, pick, randomBetween, randomInt } from './random';
 
+// umbrella.ts は「傘1本の見た目」を担当します。
+// 画像は使わず、Canvas の円・線・楕円・パスだけで上から見た傘を描きます。
 const TAU = Math.PI * 2;
 
+// レア階層は基本模様の上に装飾を積み重ねます。
+// rare -> superRare -> mythic の順で追加レイヤーが増えます。
 const rareStyles: readonly RareUmbrellaStyle[] = ['jewels', 'lace', 'moon', 'pinwheel', 'confetti', 'constellation'];
 const superRareStyles: readonly SuperRareUmbrellaStyle[] = ['halo', 'sundial', 'petalCrown', 'prismOrbit'];
 const mythicStyles: readonly MythicUmbrellaStyle[] = ['aurora', 'eclipse', 'cometMap'];
 
+// 傘デザインは生成時に一度だけ作ります。
+// フレームごとにランダム値を作らないことで、アニメーション中のちらつきを防ぎます。
 export const createUmbrellaDesign = (rarity: UmbrellaRarity = 'normal'): UmbrellaDesign => {
   const isWeird = rarity === 'weird';
   const isRare = rarity === 'rare' || rarity === 'superRare' || rarity === 'mythic';
@@ -35,12 +41,14 @@ export const createUmbrellaDesign = (rarity: UmbrellaRarity = 'normal'): Umbrell
   };
 };
 
+// 外周は傘らしい円形を保ち、歪みはごく弱い布のゆらぎ程度に抑えます。
 const canopyPoint = (angle: number, radius: number, wobble: number): [number, number] => {
   const warped = radius * (1 + Math.sin(angle * 8) * wobble * 0.45 + Math.cos(angle * 16) * wobble * 0.18);
 
   return [Math.cos(angle) * warped, Math.sin(angle) * warped];
 };
 
+// 傘の円形キャノピー外形を作ります。
 const drawCanopyShape = (ctx: CanvasRenderingContext2D, radius: number, wobble: number): void => {
   ctx.beginPath();
   for (let i = 0; i <= 80; i += 1) {
@@ -53,6 +61,7 @@ const drawCanopyShape = (ctx: CanvasRenderingContext2D, radius: number, wobble: 
   ctx.closePath();
 };
 
+// 放射状の1セグメントを塗るためのパスを作ります。
 const drawSegment = (
   ctx: CanvasRenderingContext2D,
   start: number,
@@ -70,6 +79,8 @@ const drawSegment = (
   ctx.closePath();
 };
 
+// 基本模様とレア装飾を描きます。
+// 外形は常に傘として保ち、レア感は内側の装飾レイヤーで出します。
 const drawPattern = (ctx: CanvasRenderingContext2D, design: UmbrellaDesign, radius: number): void => {
   const { palette, pattern, segments, wobble } = design;
 
@@ -165,6 +176,8 @@ const drawPattern = (ctx: CanvasRenderingContext2D, design: UmbrellaDesign, radi
   }
 };
 
+// rare レイヤーです。
+// 宝石・レース・月・紙吹雪など、通常傘より少し発見感のある装飾を足します。
 const drawRareDecoration = (ctx: CanvasRenderingContext2D, design: UmbrellaDesign, radius: number): void => {
   const { palette, rareStyle, segments } = design;
 
@@ -283,6 +296,8 @@ const drawRareDecoration = (ctx: CanvasRenderingContext2D, design: UmbrellaDesig
   }
 };
 
+// superRare レイヤーです。
+// rare の上に、光輪・日時計・花冠・プリズム軌道のような構造的な装飾を重ねます。
 const drawSuperRareDecoration = (ctx: CanvasRenderingContext2D, design: UmbrellaDesign, radius: number): void => {
   const { palette, segments, superRareStyle } = design;
 
@@ -352,6 +367,8 @@ const drawSuperRareDecoration = (ctx: CanvasRenderingContext2D, design: Umbrella
   }
 };
 
+// mythic レイヤーです。
+// さらに上位の傘だけに、オーロラ・日食・彗星図のような大きな装飾を重ねます。
 const drawMythicDecoration = (ctx: CanvasRenderingContext2D, design: UmbrellaDesign, radius: number): void => {
   const { palette, mythicStyle, segments } = design;
 
@@ -422,6 +439,8 @@ const drawMythicDecoration = (ctx: CanvasRenderingContext2D, design: UmbrellaDes
   }
 };
 
+// 傘1本の描画入口です。
+// キャノピー -> 模様 -> リブ -> 外周ハイライト -> 中心キャップの順で描きます。
 export const drawUmbrella = (
   ctx: CanvasRenderingContext2D,
   design: UmbrellaDesign,

@@ -4,10 +4,13 @@ import { createFootprintState, drawFootprints, setFootprintTarget, updateFootpri
 import { drawUmbrella } from './lib/umbrella';
 import { createWorld, drawBackground } from './lib/world';
 
+// App.tsx は React 側の薄い殻です。
+// Canvas の初期化、イベント入力、requestAnimationFrame の描画ループだけを担当します。
 const SWIPE_REGENERATE_DISTANCE = 72;
 const IDLE_WALK_DELAY = 2600;
 const IDLE_TARGET_INTERVAL = 4400;
 
+// Pointer / Mouse の画面座標を canvas 内の座標へ変換します。
 const getCanvasPoint = (event: { clientX: number; clientY: number }, canvas: HTMLCanvasElement) => {
   const rect = canvas.getBoundingClientRect();
   return {
@@ -27,6 +30,8 @@ function App() {
   const pointerStartRef = useRef<{ x: number; y: number; pointerId: number } | null>(null);
   const [seedLabel, setSeedLabel] = useState('');
 
+  // 世界の再生成は App から world.ts へ委譲します。
+  // ここでは Canvas サイズを渡し、右下に出す seed 表示だけ更新します。
   const regenerate = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -42,6 +47,8 @@ function App() {
     const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) return undefined;
 
+    // Canvas は CSS サイズと実ピクセルサイズを分けます。
+    // devicePixelRatio を反映して、Retina でもぼやけにくくします。
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const width = window.innerWidth;
@@ -56,6 +63,8 @@ function App() {
       setSeedLabel(worldRef.current.seedLabel);
     };
 
+    // 1フレーム分の描画です。
+    // 背景 -> 足跡 -> 傘の順に描くことで、足跡が傘の下に見えます。
     const drawFrame = (time: number) => {
       const world = worldRef.current;
       const footprints = footprintsRef.current;
@@ -69,6 +78,8 @@ function App() {
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
 
+      // 入力がしばらくない時は、現在位置の近くをゆっくり散歩します。
+      // 遠い目的地を急に選ぶと足跡が不自然に飛ぶため、近場だけを選びます。
       if (time - lastInputTimeRef.current > IDLE_WALK_DELAY && time >= nextIdleTargetTimeRef.current) {
         const margin = Math.min(120, Math.max(36, Math.min(width, height) * 0.12));
         const wanderDistance = Math.min(180, Math.max(70, Math.min(width, height) * 0.18));
@@ -97,6 +108,8 @@ function App() {
       frameRef.current = requestAnimationFrame(drawFrame);
     };
 
+    // マウス移動は足跡の目的地を更新します。
+    // 直近入力時刻も更新し、自動散歩を一時停止します。
     const handleMouseMove = (event: MouseEvent) => {
       const state = footprintsRef.current;
       if (!state) return;
@@ -161,6 +174,7 @@ function App() {
           if (state) setFootprintTarget(state, point.x, point.y);
           lastInputTimeRef.current = performance.now();
           nextIdleTargetTimeRef.current = lastInputTimeRef.current + IDLE_WALK_DELAY;
+          // クリックではなく、一定距離以上のスワイプ/ドラッグで世界を再生成します。
           if (Math.hypot(point.x - start.x, point.y - start.y) >= SWIPE_REGENERATE_DISTANCE) {
             regenerate();
           }

@@ -1,9 +1,13 @@
 import type { Footprint, FootprintState } from '../types';
 
+// footprints.ts は足跡の状態更新と描画を担当します。
+// App.tsx から目的地だけ受け取り、ここで追従・歩幅・フェードアウトを処理します。
 const WALK_INTERVAL = 34;
 const FOLLOW_RATE = 0.024;
 const MAX_STEP_PER_FRAME = 1.15;
 
+// 足跡の初期状態です。
+// cursor が目的地、follower が実際に歩いている位置です。
 export const createFootprintState = (width: number, height: number): FootprintState => {
   const x = width * 0.5;
   const y = height * 0.52;
@@ -20,11 +24,14 @@ export const createFootprintState = (width: number, height: number): FootprintSt
   };
 };
 
+// マウス入力や自動散歩から、足跡の目的地を更新します。
 export const setFootprintTarget = (state: FootprintState, x: number, y: number): void => {
   state.cursorX = x;
   state.cursorY = y;
 };
 
+// 足跡の本体ロジックです。
+// follower は目的地へ直接飛ばず、速度上限つきでゆっくり追いかけます。
 export const updateFootprints = (state: FootprintState, deltaMs: number): void => {
   const previousX = state.followerX;
   const previousY = state.followerY;
@@ -67,6 +74,8 @@ export const updateFootprints = (state: FootprintState, deltaMs: number): void =
   }
 };
 
+// 靴底っぽいシンプルな跡を描きます。
+// 傘より下のレイヤーに描かれるため、濃すぎない透明度にしています。
 const drawSinglePrint = (ctx: CanvasRenderingContext2D, print: Footprint): void => {
   const progress = print.age / print.maxAge;
   const alpha = Math.max(0, 1 - progress);
@@ -94,6 +103,7 @@ const drawSinglePrint = (ctx: CanvasRenderingContext2D, print: Footprint): void 
   ctx.restore();
 };
 
+// 保存されている足跡を古い順に描画します。
 export const drawFootprints = (ctx: CanvasRenderingContext2D, prints: readonly Footprint[]): void => {
   for (const print of prints) {
     drawSinglePrint(ctx, print);

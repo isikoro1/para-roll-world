@@ -11,8 +11,11 @@ import type {
 import { color, generateSeedLabel, pick, randomBetween, randomInt, weightedMode } from './random';
 import { createUmbrellaDesign } from './umbrella';
 
+// world.ts は「1回のページ表示で作られる世界」の生成を担当します。
+// 背景、傘の配置、サイズ、回転速度、生成モード、配置レアリティをここで決めます。
 const TAU = Math.PI * 2;
 
+// 背景は傘より主張しすぎないよう、淡い HSL 系のグラデーションで作ります。
 const createBackground = () => {
   const hue = randomInt(168, 238);
   return {
@@ -37,6 +40,8 @@ interface LayoutPlan {
   speedScale: number;
 }
 
+// 配置にもレアリティを持たせます。
+// 上位ほど出現率は低く、格子から離れた特殊な見た目になります。
 const weightedLayoutRarity = (): LayoutRarity => {
   const value = Math.random();
   if (value < 0.018) return 'mythic';
@@ -58,6 +63,8 @@ const weightedLayoutMode = (rarity: LayoutRarity): LayoutMode => {
   return 'diagonal-drift';
 };
 
+// 回転速度の世界観を決めます。
+// 個々の傘の速度は後でばらつかせますが、全体傾向はここで選びます。
 const weightedSpeedMode = (): SpeedMode => {
   const value = Math.random();
   if (value < 0.25) return 'sleepy';
@@ -66,6 +73,8 @@ const weightedSpeedMode = (): SpeedMode => {
   return 'mixed';
 };
 
+// 画面サイズと配置モードから、列数・行数・傘サイズなどの基本計画を作ります。
+// 各傘の位置そのものは createWorld 内でこの計画を使って決定します。
 const createLayoutPlan = (width: number, height: number): LayoutPlan => {
   const rarity = weightedLayoutRarity();
   const mode = weightedLayoutMode(rarity);
@@ -121,6 +130,8 @@ const createLayoutPlan = (width: number, height: number): LayoutPlan => {
   };
 };
 
+// superRare / mythic 配置は通常のグリッド座標では表現しにくいため、
+// index から直接「渦」「放射」「軌道」の座標を作ります。
 const createSpecialPosition = (
   index: number,
   total: number,
@@ -174,6 +185,7 @@ const createSpecialPosition = (
   return null;
 };
 
+// unified / two-type では、共有デザインを先に作って使い回します。
 const generateModeDesigns = (mode: GenerationMode): UmbrellaDesign[] => {
   if (mode === 'unified') return [createUmbrellaDesign(pickLayeredRarity(0.16, 0.035, 0.008))];
   if (mode === 'two-type') {
@@ -185,6 +197,8 @@ const generateModeDesigns = (mode: GenerationMode): UmbrellaDesign[] => {
   return [];
 };
 
+// 傘デザインのレア階層を抽選します。
+// mythic -> superRare -> rare -> normal の順に判定し、上位ほど低確率です。
 const pickLayeredRarity = (rareChance: number, superChance: number, mythicChance: number): UmbrellaRarity => {
   const value = Math.random();
   if (value < mythicChance) return 'mythic';
@@ -193,6 +207,7 @@ const pickLayeredRarity = (rareChance: number, superChance: number, mythicChance
   return 'normal';
 };
 
+// generation mode に応じて、各グリッド位置へ割り当てる傘デザインを決めます。
 const pickDesign = (
   mode: GenerationMode,
   row: number,
@@ -208,6 +223,8 @@ const pickDesign = (
   return createUmbrellaDesign(pickLayeredRarity(0.08, 0.018, 0.004));
 };
 
+// Canvas サイズを受け取り、描画ループで使う WorldState を生成します。
+// フレームごとには再生成せず、リサイズ・スワイプ・Rキーのタイミングだけ作り直します。
 export const createWorld = (width: number, height: number): WorldState => {
   const mode = weightedMode();
   const layout = createLayoutPlan(width, height);
@@ -243,6 +260,7 @@ export const createWorld = (width: number, height: number): WorldState => {
         randomBetween(-layout.spacingY, layout.spacingY) * layout.jitter;
       const normalizedX = (gridX - width * 0.5) / Math.max(1, width * 0.5);
       const normalizedY = (gridY - height * 0.5) / Math.max(1, height * 0.5);
+      // courtyard-grid は中央を抜いて、傘に囲まれた中庭のように見せます。
       if (layout.mode === 'courtyard-grid' && normalizedX * normalizedX * 1.2 + normalizedY * normalizedY * 1.7 < 0.22) {
         continue;
       }
@@ -287,6 +305,7 @@ export const createWorld = (width: number, height: number): WorldState => {
   };
 };
 
+// 背景描画だけは world.ts に置き、世界生成と同じ色設定を使います。
 export const drawBackground = (ctx: CanvasRenderingContext2D, world: WorldState, width: number, height: number): void => {
   const gradient = ctx.createLinearGradient(0, 0, width, height);
   gradient.addColorStop(0, world.background.top);
