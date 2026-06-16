@@ -1,5 +1,7 @@
 # para-roll-world
 
+設計書: [docs/DESIGN.md](docs/DESIGN.md)
+
 `para-roll-world` は、真上から見たたくさんの傘が静かに回転し、足跡がマウスカーソルをゆっくり追いかける、落ち着いた抽象アニメーションアプリです。
 
 公開 URL: https://para-roll-world.isikoro.dev/
